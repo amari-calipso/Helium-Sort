@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2020 thatsOven
+Copyright (c) 2020 Amari Calipso
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -25,44 +25,44 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 /*
  * Helium Sort
- * 
+ *
  * A block merge sorting algorithm inspired by Grail Sort and focused on adaptivity.
- * 
+ *
  * Time complexity:
  *  - Best case: O(n)
  *  - Average case: O(n log n)
  *  - Worst case: O(n log n)
  * Space complexity is variable.
- * 
+ *
  * The algorithm extends the concept of adaptivity to memory,
  * by using different strategies based on the amount
- * of memory given to it. 
- * 
+ * of memory given to it.
+ *
  * Major strategies are:
  * "Uranium": merge sort, requires n / 2 memory.
  *            The code refers to it as "Strategy 1".
- * 
+ *
  * "Hydrogen": block merge sort, requires "x" memory with sqrt(n) + 2n / sqrt(n) <= x < n / 2.
- *             Hydrogen mode can be modified to run with sqrt(n) + n / sqrt(n) memory using 
- *             an internal key buffer, but benchmarking has shown that this variant, in practice, 
+ *             Hydrogen mode can be modified to run with sqrt(n) + n / sqrt(n) memory using
+ *             an internal key buffer, but benchmarking has shown that this variant, in practice,
  *             is slower than strategy 3A. This mode is referred to as "Strategy 2".
- * 
+ *
  * "Helium": block merge sort, requires "x" memory with 0 <= x < sqrt(n) + 2n / sqrt(n).
- *           Helium mode uses five strategies, referred to as: "3A", "3B", "3C", "4A", 
+ *           Helium mode uses five strategies, referred to as: "3A", "3B", "3C", "4A",
  *           and "4B". Optimal amounts of memory are:
  *              - sqrt(n) + n / sqrt(n): will use strategy 3A;
  *              - sqrt(n): will use strategy 3B or 4A;
  *              - 0: will use strategy 3C or 4B.
- * 
- * When a very low amount of distinct values is found or the array size is less or equal than 256, 
+ *
+ * When a very low amount of distinct values is found or the array size is less or equal than 256,
  * the sort uses an adaptive in-place merge sort referred to as "Strategy 5".
- * 
+ *
  * Special thanks to the members of The Holy Grail Sort Project, for the creation of Rewritten GrailSort,
  * which has been a great reference during the development of this algorithm,
  * and thanks to aphitorite, a great sorting mind which inspired the creation of this algorithm,
  * alongside being very helpful for me to understand some of the workings of block merge sorting algorithms,
- * and for part of the code used in this algorithm itself: "smarter block selection", 
- * the algorithm used in the "blockSelectInPlace" and "blockSelectOOP" routines, and the 
+ * and for part of the code used in this algorithm itself: "smarter block selection",
+ * the algorithm used in the "blockSelectInPlace" and "blockSelectOOP" routines, and the
  * code used in the "mergeBlocks" routine.
  */
 
@@ -95,7 +95,7 @@ typedef struct HeliumData {
     size_t* indices;
     size_t* keys;
     size_t  extKeyLen;
-    
+
     size_t blockLen;
     size_t bufPos;
     size_t bufLen;
@@ -182,7 +182,7 @@ size_t binarySearchRight(VAR* array, size_t a, size_t b, VAR* value);
 
 #define REDUCE_BOUNDS(array, a, m, b)                      \
     a = binarySearchRight(array, a, m - 1, array + m    ); \
-    b = binarySearchLeft( array, m, b    , array + m - 1); 
+    b = binarySearchLeft( array, m, b    , array + m - 1);
 
 
 #define COMBINE_REDUCE(self, array, a, m, b, blockLen)    \
@@ -256,12 +256,12 @@ inline void getBlocksIndices(size_t* indices, VAR* array, size_t a, size_t leftB
            m = leftBlocks,
            r = m,
            b = m + rightBlocks;
-           
+
     size_t* o = indices;
 
     for (; l < m && r < b; o++) {
         if (CMP(
-            array + a + (l + 1) * blockLen - 1, 
+            array + a + (l + 1) * blockLen - 1,
             array + a + (r + 1) * blockLen - 1
         ) <= 0) *o = l++;
         else    *o = r++;
@@ -272,7 +272,7 @@ inline void getBlocksIndices(size_t* indices, VAR* array, size_t a, size_t leftB
 }
 
 #define EXT 0
-#define IN_OUT_FN(NAME) NAME##InPlace 
+#define IN_OUT_FN(NAME) NAME##InPlace
 
 #include "inOut.h"
 
@@ -280,7 +280,7 @@ inline void getBlocksIndices(size_t* indices, VAR* array, size_t a, size_t leftB
 #undef IN_OUT_FN
 
 #define EXT 1
-#define IN_OUT_FN(NAME) NAME##OOP 
+#define IN_OUT_FN(NAME) NAME##OOP
 
 #include "inOut.h"
 
@@ -327,7 +327,7 @@ void hydrogenCombine(HeliumData* self, VAR* array, size_t a, size_t m, size_t b)
 
     blockCycle(self, array, indices, a, leftBlocks, rightBlocks, blockLen);
     mergeBlocksOOP(self, array, a, leftBlocks, blockQty, blockLen, frag);
-} 
+}
 
 void hydrogenLoop(HeliumData* self, VAR* array, size_t a, size_t b) {
     size_t r  = RUN_SIZE,
@@ -477,7 +477,7 @@ void reverseRuns(VAR* array, size_t a, size_t b) {
 size_t checkSortedIdx(VAR* array, size_t a, size_t b) {
     reverseRuns(array, a, b);
 
-    while (--b > a) 
+    while (--b > a)
         if (CMP(array + b, array + b - 1) < 0)
             return b;
 
@@ -539,34 +539,34 @@ inline char findKeys(size_t* found, HeliumData* self, VAR* array, size_t a, size
     if (b - p < MIN_SORTED_UNIQUE) {
         *found = findKeysUnsorted(self, array, a, b - 1, b, q, b);
         return 0;
-    } 
+    }
 
     size_t n = findKeysSorted(self, array, p, b, q);
     if (n == q) {
         *found = n;
         return 0;
     }
-    
+
     *found = findKeysUnsorted(self, array, a, p, p + n, q, b);
     return 0;
 }
-    
+
 // strategy 5
 void inPlaceMergeSort(HeliumData* self, VAR* array, size_t a, size_t b, size_t p) {
     sortRuns(array, a, b, p);
-    
+
     size_t r = RUN_SIZE,
            l = b - a;
 
     while (r < l) {
-        size_t twoR = r << 1, i;                                     
+        size_t twoR = r << 1, i;
         for (i = a; i + twoR < b; i += twoR)
             mergeInPlaceWithCheck(self, array, i, i + r, i + twoR);
 
         if (i + r < b) mergeInPlaceWithCheck(self, array, i, i + r, b);
 
         r = twoR;
-    } 
+    }
 }
 
 inline void inPlaceMergeSortWithCheck(HeliumData* self, VAR* array, size_t a, size_t b) {
@@ -596,7 +596,7 @@ void heliumSort(VAR* array, size_t a, size_t b, size_t mem) {
 
         HeliumData self;
         self.extBuf    = (VAR*)malloc(mem * sizeof(VAR));
-        self.extBufLen = mem; 
+        self.extBufLen = mem;
         self.rotate    = rotateOOP;
 
         uraniumLoop(&self, array, a, b);
@@ -696,7 +696,7 @@ void heliumSort(VAR* array, size_t a, size_t b, size_t mem) {
 
         size_t keysFound;
         if (findKeys(&keysFound, &self, array, a, b, keySize)) return;
-        
+
         char ideal = keysFound == keySize;
         if ((!ideal) && keysFound <= MAX_STRAT5_UNIQUE) {
             inPlaceMergeSort(&self, array, a, b, b);
@@ -716,11 +716,11 @@ void heliumSort(VAR* array, size_t a, size_t b, size_t mem) {
 
         if (ideal) strat3BLoop(&self, array, a, e);
         else       strat4ALoop(&self, array, a, e);
-            
+
         free(self.extBuf);
         return;
     }
-    
+
     HeliumData self;
     self.rotate = rotateOOP;
 
@@ -751,7 +751,7 @@ void heliumSort(VAR* array, size_t a, size_t b, size_t mem) {
         self.bufPos   = b - sqrtn;
         self.keyLen   = keySize;
         self.keyPos   = e;
-        
+
         if (hasMem) {
             if (sqrtn > (mem << 1)) self.rotate = rotateInPlace;
             strat3CLoopExtraBuf(&self, array, a, e);
